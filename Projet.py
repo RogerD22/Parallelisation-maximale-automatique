@@ -14,7 +14,7 @@ class Task:
         self.reads = set(reads)
         self.writes = set(writes)
         self.run = run
-    
+        
     def execute(self):
         if self.run:
             self.run()
@@ -24,6 +24,13 @@ class TaskSystem:
         self.tasks = {task.name: task for task in tasks}
         self.precedence = precedence
         self.validate()
+
+        for i in range(len(tasks)):
+            task_i = tasks[i].name
+            for j in range(i + 1, len(tasks)):
+                task_j = tasks[j].name
+                if not self.can_run_in_parallel(task_i, task_j):
+                    raise ValueError(f"Les tâches {task_i} et {task_j} violent les conditions de Bernstein.")
     
     def validate(self):
         defined_tasks = set(self.tasks.keys())
@@ -38,7 +45,6 @@ class TaskSystem:
             raise ValueError("Le graphe de dépendances contient une boucle.")
     
     def has_cycle(self):
-        """ Vérifie s'il y a une boucle dans le graphe de dépendances """
         visited = set()
         rec_stack = set()
         
@@ -60,12 +66,18 @@ class TaskSystem:
                 return True
         return False
     
-    def getDependencies(self, task_name):
-        """ Récupère les dépendances d'une tâche """
-        if task_name not in self.tasks:
-            raise ValueError(f"Tâche inconnue: {task_name}")
-        return self.precedence.get(task_name, [])
+
     
+    def can_run_in_parallel(self, task1, task2):
+        t1_reads = self.tasks[task1].reads
+        t1_writes = self.tasks[task1].writes
+        t2_reads = self.tasks[task2].reads
+        t2_writes = self.tasks[task2].writes
+
+        if (t1_writes & t2_reads or t1_reads & t2_writes or t1_writes & t2_writes) and (task1 not in self.precedence.get(task2, []) and task2 not in self.precedence.get(task1, [])):
+            return False
+        return True
+
     def runSeq(self):
         """ Exécution séquentielle des tâches en respectant les dépendances """
         executed = set()
@@ -77,18 +89,8 @@ class TaskSystem:
                     self.tasks[task].execute()
                     executed.add(task)
         print(f"Temps d'exécution séquentielle: {time.time() - start:.6f}s")
-    
-    def can_run_in_parallel(self, task1, task2):
-        """ Vérifie si deux tâches peuvent s'exécuter en parallèle """
-        t1_reads = self.tasks[task1].reads
-        t1_writes = self.tasks[task1].writes
-        t2_reads = self.tasks[task2].reads
-        t2_writes = self.tasks[task2].writes
 
-        if t1_writes & t2_reads or t1_reads & t2_writes or t1_writes & t2_writes:
-            return False
-        return True
-
+        
     def run(self):
         """ Exécution parallèle des tâches en respectant les dépendances et les conditions de Bernstein """
         start = time.time()
@@ -97,13 +99,8 @@ class TaskSystem:
 
         while len(executed) < len(self.tasks):
             ready_tasks = [t for t in self.tasks if t not in executed and not precedence.get(t, set())]
-
+            
             threads = []
-            for i, task1 in enumerate(ready_tasks):
-                for task2 in ready_tasks[i+1:]:
-                    if not self.can_run_in_parallel(task1, task2):
-                        precedence[task1].add(task2)
-                        precedence[task2].add(task1)
 
             for task in ready_tasks:
                 if task not in executed and all(dep in executed for dep in self.precedence.get(task, [])):

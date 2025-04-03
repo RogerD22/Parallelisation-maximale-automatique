@@ -1,0 +1,10 @@
+// Dépendances des tâches
+digraph {
+	T1
+	T2
+	T3
+	T4
+	T1 -> T2
+	T2 -> T4
+	T3 -> T4
+}
