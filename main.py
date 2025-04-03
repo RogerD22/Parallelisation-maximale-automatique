@@ -1,5 +1,5 @@
 from Projet import Task, TaskSystem
-import time
+import time 
 
 def run1():
     global X
@@ -17,18 +17,18 @@ def run3():
     print("Execution de la tache 3")
 
 def run4():
-    global X, Y, Z
+    global Y, Z
     Z = Z + Y
-    print("Execution de la tache 4")
+    print("Execution de la tache 4 %d" % Z)
 
 t1 = Task(name="T1", reads=[], writes=["X"], run=run1)
 t2 = Task(name="T2", reads=["X"], writes=["Y"], run=run2)
-t3 = Task(name="T3", reads=["Z"], writes=["Z"], run=run3)
-t4 = Task(name="T4", reads=["X", "Y"], writes=["X", "Y", "Z"], run=run4)
+t3 = Task(name="T3", reads=[], writes=["Z"], run=run3)
+t4 = Task(name="T4", reads=["Z", "Y"], writes=["Z"], run=run4)
 
 task_system = TaskSystem(
     tasks=[t1, t2, t3, t4],
-    precedence={"T1": [],"T2": ["T1"],"T3": [],"T4": ["T2", "T3"]  
+    precedence={"T1": [],"T2": ["T1"],"T3": [],"T4": ["T2", "T3"]
     }
 )
 

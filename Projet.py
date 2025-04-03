@@ -78,8 +78,19 @@ class TaskSystem:
                     executed.add(task)
         print(f"Temps d'exécution séquentielle: {time.time() - start:.6f}s")
     
+    def can_run_in_parallel(self, task1, task2):
+        """ Vérifie si deux tâches peuvent s'exécuter en parallèle """
+        t1_reads = self.tasks[task1].reads
+        t1_writes = self.tasks[task1].writes
+        t2_reads = self.tasks[task2].reads
+        t2_writes = self.tasks[task2].writes
+
+        if t1_writes & t2_reads or t1_reads & t2_writes or t1_writes & t2_writes:
+            return False
+        return True
+
     def run(self):
-        """ Exécution parallèle des tâches en respectant les dépendances """
+        """ Exécution parallèle des tâches en respectant les dépendances et les conditions de Bernstein """
         start = time.time()
         executed = set()
         precedence = {task: set(deps) for task, deps in self.precedence.items()}
@@ -88,10 +99,17 @@ class TaskSystem:
             ready_tasks = [t for t in self.tasks if t not in executed and not precedence.get(t, set())]
 
             threads = []
+            for i, task1 in enumerate(ready_tasks):
+                for task2 in ready_tasks[i+1:]:
+                    if not self.can_run_in_parallel(task1, task2):
+                        precedence[task1].add(task2)
+                        precedence[task2].add(task1)
+
             for task in ready_tasks:
-                thread = threading.Thread(target=self.tasks[task].execute)
-                thread.start()
-                threads.append((task, thread))
+                if task not in executed and all(dep in executed for dep in self.precedence.get(task, [])):
+                    thread = threading.Thread(target=self.tasks[task].execute)
+                    thread.start()
+                    threads.append((task, thread))
 
             for task, thread in threads:
                 thread.join()
@@ -141,5 +159,3 @@ class TaskSystem:
             for dep in deps:
                 dot.edge(dep, task)
         dot.render('task_dependencies', format='png', view=True)
-
-
