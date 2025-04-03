@@ -31,11 +31,11 @@ t1 = Task(name="T1", reads=[], writes=["X"], run=run1)
 t2 = Task(name="T2", reads=["X"], writes=["Y"], run=run2)
 t3 = Task(name="T3", reads=[], writes=["Z"], run=run3)
 t4 = Task(name="T4", reads=["Z", "Y"], writes=["Z"], run=run4)
-t11 = Task(name="T11", reads=[], writes=["X"], run=run11)
+#t11 = Task(name="T11", reads=[], writes=["X"], run=run11)
 
 task_system = TaskSystem(
-    tasks=[t1, t2, t3, t4,t11],
-    precedence={"T1": [],"T2": ["T1"],"T3": [],"T4": ["T2", "T3"], "T11": []}
+    tasks=[t1, t2, t3, t4],
+    precedence={"T1": [],"T2": ["T1"],"T3": [],"T4": ["T2", "T3"]}
     
 )
 
